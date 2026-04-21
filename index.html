@@ -1,0 +1,1754 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weekly Planner — Demo</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --panel: #ffffff;
+    --ink: #1f2330;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --line-strong: #d1d5db;
+    --accent: #4f46e5;
+    --fixed-bg: #f1f1ef;
+    --fixed-ink: #6b7280;
+
+    --cat-work: #2563eb;
+    --cat-work-bg: #e0ecff;
+    --cat-project: #7c3aed;
+    --cat-project-bg: #ede4ff;
+    --cat-family: #db2777;
+    --cat-family-bg: #ffe1ef;
+    --cat-event: #d97706;
+    --cat-event-bg: #fff0d6;
+
+    --cal: #0891b2;
+    --cal-bg: #e0f6fa;
+    --cal-f: #9333ea;
+    --cal-f-bg: #f4e8ff;
+    --wife: #e11d48;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+  header {
+    padding: 16px 20px; background: var(--panel); border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  .toolbar { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  button, .btn {
+    font-size: 13px; padding: 6px 10px; border: 1px solid var(--line-strong);
+    background: #fff; border-radius: 6px; cursor: pointer; color: var(--ink);
+  }
+  button:hover { background: #f3f4f6; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.primary:hover { filter: brightness(1.08); }
+
+  .wrap { padding: 14px 20px 32px; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tab { padding: 6px 10px; background: #fff; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--ink); }
+  .tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .tab .sub { display: block; color: var(--muted); font-size: 11px; }
+  .tab.active .sub { color: #cbd5e1; }
+
+  .legend { display: flex; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 12px; margin: 6px 0 14px; }
+  .legend .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(7, minmax(160px, 1fr)); gap: 8px;
+  }
+  .day {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .day > header {
+    padding: 8px 10px; border-bottom: 1px solid var(--line); background: #fafafa;
+    font-size: 12px; font-weight: 600; color: var(--ink); display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .day > header .date { color: var(--muted); font-weight: 500; }
+  .day.today { border-color: #fb923c; box-shadow: 0 0 0 2px #fdba74; }
+  .day.today > header { background: #fff7ed; }
+  .day.today > header .date { color: #c2410c; }
+  .day.past { opacity: 0.6; background: #f3f4f6; }
+  .day.past > header { background: #e5e7eb; color: #6b7280; }
+  .day.past > header .date { color: #9ca3af; }
+
+  .blocks { display: flex; flex-direction: column; }
+  .block {
+    border-top: 1px dashed var(--line);
+    padding: 6px 8px;
+    min-height: 36px;
+  }
+  .block:first-child { border-top: none; }
+  .block.fixed {
+    background: var(--fixed-bg);
+    color: var(--fixed-ink);
+    font-size: 11px;
+  }
+  .block .label { font-size: 11px; color: var(--muted); display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+  .block .label .time { font-variant-numeric: tabular-nums; }
+  .block .label .name { font-weight: 600; color: var(--ink); }
+  .block.fixed .label .name { color: var(--fixed-ink); }
+
+  .task {
+    background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--line-strong);
+    border-radius: 5px; padding: 4px 6px; margin-bottom: 4px; font-size: 12px; line-height: 1.25;
+    cursor: pointer; position: relative;
+  }
+  .task:hover { border-color: var(--line-strong); }
+  .task.cat-work { border-left-color: var(--cat-work); background: var(--cat-work-bg); }
+  .task.cat-project { border-left-color: var(--cat-project); background: var(--cat-project-bg); }
+  .task.cat-family { border-left-color: var(--cat-family); background: var(--cat-family-bg); }
+  .task.cat-event { border-left-color: var(--cat-event); background: var(--cat-event-bg); }
+  .task.done { opacity: 0.5; text-decoration: line-through; }
+  .task .wife {
+    display: inline-block; font-size: 10px; color: var(--wife); font-weight: 600;
+    border: 1px solid var(--wife); border-radius: 3px; padding: 0 4px; margin-right: 4px;
+  }
+  .add-btn {
+    display: block; width: 100%; padding: 3px 6px; text-align: left; font-size: 11px;
+    background: transparent; border: 1px dashed var(--line-strong); color: var(--muted); border-radius: 4px;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .calendar-event {
+    background: var(--cal-bg); border: 1px solid var(--cal); border-left: 4px solid var(--cal);
+    color: #0e7490; padding: 3px 6px; margin-bottom: 4px; border-radius: 5px; font-size: 11px;
+    line-height: 1.25;
+  }
+  .calendar-event .ce-time { font-variant-numeric: tabular-nums; color: #155e75; }
+  .calendar-event::before { content: "📅 "; }
+  .calendar-event.owner-F {
+    background: var(--cal-f-bg); border-color: var(--cal-f); border-left-color: var(--cal-f); color: #6b21a8;
+  }
+  .calendar-event.owner-F .ce-time { color: #6b21a8; }
+  .calendar-event.owner-F::before { content: "👤 "; }
+
+  /* Sidebar for "items to add to shared calendar" */
+  .sidebar {
+    position: fixed; right: 0; top: 0; height: 100vh; width: 360px;
+    background: #fff; border-left: 1px solid var(--line); transform: translateX(100%);
+    transition: transform .18s ease; z-index: 20; display: flex; flex-direction: column;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar > header { padding: 12px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; }
+  .sidebar h2 { margin: 0; font-size: 14px; }
+  .sidebar .body { padding: 12px 16px; overflow: auto; flex: 1; }
+  .sidebar .sync-item { border: 1px solid var(--line); border-radius: 6px; padding: 8px; margin-bottom: 8px; font-size: 12px; }
+  .sidebar .sync-item .when { color: var(--muted); font-size: 11px; }
+  .sidebar .hint { font-size: 12px; color: var(--muted); background: #fffbeb; border: 1px solid #fde68a; border-radius: 6px; padding: 8px; margin-bottom: 12px; }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(20,24,36,.35); display: none;
+    align-items: center; justify-content: center; z-index: 30;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 10px; width: 420px; max-width: 92vw; padding: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.18);
+  }
+  .modal h3 { margin: 0 0 4px; font-size: 15px; }
+  .modal .ctx { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+  .field input[type=text], .field select, .field textarea {
+    width: 100%; padding: 7px 8px; font-size: 13px; border: 1px solid var(--line-strong); border-radius: 6px;
+    font-family: inherit;
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field.checkbox { display: flex; align-items: center; gap: 8px; }
+  .field.checkbox input { margin: 0; }
+  .modal-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 10px; }
+  .modal-actions .danger { color: #b91c1c; border-color: #fecaca; background: #fff; }
+  .modal-actions .danger:hover { background: #fef2f2; }
+
+  /* Templates bar */
+  .templates-bar {
+    display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+    padding: 8px 10px; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .templates-bar .tlabel { font-size: 12px; color: var(--muted); margin-right: 4px; }
+  .tpl-chip {
+    font-size: 12px; padding: 3px 10px; border-radius: 999px;
+    border: 1px solid var(--line-strong); background: #fafafa; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .tpl-chip:hover { background: #f3f4f6; }
+  .tpl-chip.active { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tpl-chip .del { color: var(--muted); font-size: 11px; padding: 0 2px; }
+  .tpl-chip .del:hover { color: #b91c1c; }
+  .tpl-chip .tpl-edit { color: var(--muted); font-size: 11px; padding: 0 2px; margin-left: 2px; }
+  .tpl-chip .tpl-edit:hover { color: var(--accent); }
+  .tpl-chip.cat-work    { border-color: var(--cat-work);    background: var(--cat-work-bg); }
+  .tpl-chip.cat-project { border-color: var(--cat-project); background: var(--cat-project-bg); }
+  .tpl-chip.cat-family  { border-color: var(--cat-family);  background: var(--cat-family-bg); }
+  .tpl-chip.cat-event   { border-color: var(--cat-event);   background: var(--cat-event-bg); }
+  .tpl-new {
+    font-size: 12px; padding: 3px 10px; border-radius: 999px;
+    border: 1px dashed var(--line-strong); background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .tpl-new:hover { color: var(--accent); border-color: var(--accent); }
+
+  .placement-hint {
+    position: sticky; top: 0; z-index: 5;
+    background: #fef3c7; border: 1px solid #fcd34d; color: #92400e;
+    padding: 6px 10px; border-radius: 8px; font-size: 13px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+  }
+  .placement-hint[hidden] { display: none !important; }
+  body.placing .block:not(.fixed) { outline: 2px dashed var(--accent); outline-offset: -2px; cursor: copy; }
+
+  .task .tasktime { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 11px; margin-right: 4px; }
+
+  /* To-do list view */
+  .tabs .tab.todo-tab { margin-left: auto; border-style: dashed; }
+  .tabs .tab.todo-tab.active { border-style: solid; }
+  .todo-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; gap: 12px; flex-wrap: wrap;
+  }
+  .todo-header .count { color: var(--muted); font-size: 12px; }
+  .todo-list { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+  .todo-item {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+    padding: 8px 10px; border-bottom: 1px solid var(--line);
+  }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-item.done { opacity: 0.55; }
+  .todo-item.done .todo-title { text-decoration: line-through; }
+  .todo-item .todo-check { width: 16px; height: 16px; margin: 0; }
+  .todo-item .todo-body { min-width: 0; }
+  .todo-item .todo-title { font-size: 14px; font-weight: 500; }
+  .todo-item .todo-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .todo-item .todo-cat {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle;
+  }
+  .todo-item .todo-cat.cat-work    { background: var(--cat-work); }
+  .todo-item .todo-cat.cat-project { background: var(--cat-project); }
+  .todo-item .todo-cat.cat-family  { background: var(--cat-family); }
+  .todo-item .todo-cat.cat-event   { background: var(--cat-event); }
+  .todo-item .todo-actions { display: flex; gap: 4px; }
+  .todo-item .todo-actions button { font-size: 11px; padding: 4px 8px; }
+  .todo-empty { padding: 24px; text-align: center; color: var(--muted); font-size: 13px; }
+  .todo-item .todo-sched {
+    display: inline-block; font-size: 11px; color: #0e7490;
+    background: var(--cal-bg); border: 1px solid var(--cal);
+    border-radius: 3px; padding: 1px 6px; margin-top: 4px;
+  }
+  .todo-item.done .todo-sched { opacity: 0.6; }
+
+  /* Inbox items rendered in the grid look identical to regular tasks now. */
+
+  /* Modal time-range warning */
+  .time-warning {
+    font-size: 12px; color: #b45309; background: #fef3c7; border: 1px solid #fcd34d;
+    padding: 6px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.3;
+  }
+  .time-warning[hidden] { display: none !important; }
+
+  /* Ghost echoes in neighbouring blocks */
+  .task.ghost {
+    opacity: 0.55; background: #fafaf9 !important;
+    border-left-style: dotted !important;
+    font-style: italic; cursor: default; pointer-events: none;
+  }
+  .task.ghost .ghost-from { font-size: 10px; color: var(--muted); margin-left: 4px; font-style: normal; }
+  .task.ghost .ghost-arrow { font-style: normal; color: var(--muted); margin-right: 2px; }
+
+  @media print {
+    .toolbar, .tabs, .add-btn, .sidebar, .modal-backdrop { display: none !important; }
+    .day { break-inside: avoid; }
+    .grid { grid-template-columns: repeat(7, 1fr); }
+    body { background: #fff; }
+  }
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    .grid { grid-template-columns: 1fr; }
+    .sidebar { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Weekly Planner</h1>
+    <div class="sub">Demo · Mon 20 Apr → Sun 24 May 2026 · <span id="versionStamp" style="opacity:0.7"></span></div>
+  </div>
+  <div class="toolbar">
+    <button id="openSync">Sync list <span id="syncCount" style="background:#fee2e2;color:#b91c1c;border-radius:10px;padding:0 6px;font-size:11px;margin-left:4px;">0</span></button>
+    <button id="exportBtn">Export JSON</button>
+    <button id="importBtn">Import JSON</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+    <button onclick="window.print()">Print</button>
+    <button id="resetBtn" title="Clear all tasks">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs" id="weekTabs"></div>
+
+  <div class="templates-bar" id="templatesBar">
+    <span class="tlabel">Quick add:</span>
+    <!-- populated by JS -->
+  </div>
+
+  <div class="placement-hint" id="placementHint" hidden>
+    <span>Click a block to add "<strong id="placementName"></strong>". <span style="color:#b45309">Press Esc to cancel.</span></span>
+    <button id="cancelPlace">Cancel</button>
+  </div>
+
+  <div class="legend">
+    <span class="chip"><span class="dot" style="background:var(--cat-work)"></span>Work prep &amp; admin</span>
+    <span class="chip"><span class="dot" style="background:var(--cat-project)"></span>Projects &amp; hobbies</span>
+    <span class="chip"><span class="dot" style="background:var(--cat-family)"></span>Family / partner / social</span>
+    <span class="chip"><span class="dot" style="background:var(--cat-event)"></span>Event (going out, shopping)</span>
+    <span class="chip"><span class="dot" style="background:var(--cal)"></span>Calendar – Personal (📅)</span>
+    <span class="chip"><span class="dot" style="background:var(--cal-f)"></span>Calendar – Partner (👤)</span>
+    <span class="chip"><span class="dot" style="background:var(--wife); border-radius:50%"></span>Needs partner → sync to shared calendar</span>
+  </div>
+
+  <div id="weekContainer"></div>
+</div>
+
+<!-- Sync Sidebar -->
+<div class="sidebar" id="sidebar">
+  <header>
+    <h2>Items needing partner</h2>
+    <button id="closeSync">Close</button>
+  </header>
+  <div class="body">
+    <div class="hint" id="syncHintStandalone">
+      Demo view. This list collects any task ticked as <em>Needs partner</em>.
+      In the full app, these get pushed to a shared family calendar with one click.
+    </div>
+    <div class="hint" id="syncHintServer" style="display:none">
+      Server mode. Click <strong>Push to shared calendar</strong> to create each
+      item as an event on your shared calendar.
+    </div>
+    <div id="syncList"></div>
+    <button class="primary" style="width:100%;margin-top:6px" id="pushAllBtn" hidden>Push to shared calendar</button>
+    <button style="width:100%;margin-top:6px" id="copyListBtn">Copy list to clipboard</button>
+    <div id="pushLog" style="margin-top:10px; font-size:12px; color:var(--muted)"></div>
+  </div>
+</div>
+
+<!-- What's New Modal (shown once after a version bump when older state is imported) -->
+<div class="modal-backdrop" id="whatsNewModal">
+  <div class="modal" style="max-width:520px">
+    <h3 id="whatsNewTitle">What's new</h3>
+    <div class="ctx" id="whatsNewCtx"></div>
+    <div id="whatsNewBody" style="font-size:13px; max-height:50vh; overflow:auto; line-height:1.45"></div>
+    <div class="modal-actions">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button class="primary" id="whatsNewOkBtn">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Schedule Picker Modal -->
+<div class="modal-backdrop" id="scheduleModal">
+  <div class="modal">
+    <h3>Schedule task</h3>
+    <div class="ctx" id="scheduleCtx"></div>
+    <div class="field">
+      <label>Day</label>
+      <select id="sched_day"></select>
+    </div>
+    <div class="field">
+      <label>Block</label>
+      <select id="sched_block"></select>
+    </div>
+    <div class="field">
+      <label>Time within block (optional)</label>
+      <input type="text" id="sched_time" placeholder="e.g. 9:00–10:30 or 60 min">
+      <div id="schedWarning" class="time-warning" hidden></div>
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button id="schedCancelBtn">Cancel</button>
+        <button class="primary" id="schedSaveBtn">Schedule</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Template Modal -->
+<div class="modal-backdrop" id="tplModal">
+  <div class="modal">
+    <h3 id="tplModalTitle">New template</h3>
+    <div class="ctx">Templates let you one-click-add recurring tasks to any slot.</div>
+    <div class="field">
+      <label>Template name (shown on the chip)</label>
+      <input type="text" id="tpl_name" placeholder="e.g. Admin hour">
+    </div>
+    <div class="field">
+      <label>Task title when inserted (optional — defaults to name)</label>
+      <input type="text" id="tpl_title" placeholder="">
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="tpl_cat">
+        <option value="work">Work prep &amp; admin</option>
+        <option value="project" selected>Projects &amp; hobbies</option>
+        <option value="family">Family / wife / social</option>
+        <option value="event">Event (going out, shopping)</option>
+      </select>
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="tpl_wife">
+      <label for="tpl_wife" style="margin:0">Default to "needs partner" when inserted</label>
+    </div>
+    <div class="modal-actions">
+      <div></div>
+      <div style="display:flex;gap:8px">
+        <button id="tplCancelBtn">Cancel</button>
+        <button class="primary" id="tplSaveBtn">Create template</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">New task</h3>
+    <div class="ctx" id="modalCtx"></div>
+    <div class="field">
+      <label>Task</label>
+      <input type="text" id="f_title" placeholder="e.g. Draft return-to-work plan">
+    </div>
+    <div class="field">
+      <label>Time within block (optional)</label>
+      <input type="text" id="f_time" placeholder="e.g. 9:00–10:30 or 60 min">
+      <div id="timeWarning" class="time-warning" hidden></div>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="f_notes" placeholder="Details, context, links…"></textarea>
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="f_cat">
+        <option value="work">Work prep &amp; admin</option>
+        <option value="project">Projects &amp; hobbies</option>
+        <option value="family">Family / wife / social</option>
+        <option value="event">Event (going out, shopping)</option>
+      </select>
+    </div>
+    <div class="field checkbox">
+      <input type="checkbox" id="f_wife">
+      <label for="f_wife" style="margin:0">Needs partner (sync to shared calendar)</label>
+    </div>
+    <div class="field checkbox" id="f_trackField">
+      <input type="checkbox" id="f_track">
+      <label for="f_track" style="margin:0">Also add to To-do list</label>
+    </div>
+    <div class="field checkbox" id="f_scheduleField">
+      <input type="checkbox" id="f_schedule">
+      <label for="f_schedule" style="margin:0">Schedule it now</label>
+    </div>
+    <div id="f_scheduleDetails" hidden>
+      <div class="field">
+        <label>Day</label>
+        <select id="f_sched_day"></select>
+      </div>
+      <div class="field">
+        <label>Block</label>
+        <select id="f_sched_block"></select>
+      </div>
+    </div>
+    <div class="field checkbox" id="f_doneField">
+      <input type="checkbox" id="f_done">
+      <label for="f_done" style="margin:0">Mark done</label>
+    </div>
+    <div class="modal-actions">
+      <div style="display:flex;gap:8px">
+        <button class="danger" id="deleteBtn">Delete</button>
+        <button id="sendToTodoBtn" title="Remove from this slot and park in the To-do list">To to-do list</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="cancelBtn">Cancel</button>
+        <button class="primary" id="saveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ------------- Version / changelog -------------
+const VERSION = "1.0.0";
+const UPDATED = "2026-04-21";
+// Changelog newest-first. Each release lists what changed since the previous one.
+const CHANGELOG = [
+  { version: "1.0.0", date: "2026-04-21", notes: [
+    "Initial planning timetable: 5 weeks (20 Apr → 24 May 2026).",
+    "Week grid with weekday block structure and weekend Morning/Afternoon.",
+    "Google Calendar events from personal and partner calendars overlaid on the grid.",
+    "Editable tasks with category, time-within-block, and needs-partner flag.",
+    "Overflow warnings when a task's time runs outside its block, with ghost echoes in impinged blocks.",
+    "Clash warnings when a time overlaps another calendar event or scheduled task.",
+    "Quick-add templates with click-then-drop-on-block placement; edit/delete per chip.",
+    "To-do list tab: capture discrete tasks, schedule them into slots, track completion.",
+    "Sync list for items flagged as needing partner — for push to a shared calendar."
+  ]}
+];
+
+// ------------- Data model -------------
+// Weeks start Monday. We cover 5 weeks: w/c 20 Apr, 27 Apr, 4 May, 11 May, 18 May.
+const START_DATE = new Date(2026, 3, 20); // Apr 20 2026 (Mon)
+const WEEK_COUNT = 5;
+// Live "today" so the highlight follows the real date whenever the page is opened.
+const TODAY_ISO = (() => { const d = new Date(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,"0"); const dd=String(d.getDate()).padStart(2,"0"); return `${y}-${m}-${dd}`; })();
+
+const WEEKDAY_BLOCKS = [
+  { id: "breakfast", label: "Breakfast & morning routine", time: "07:00–08:30", fixed: true },
+  { id: "shower",    label: "Wash & dress",   time: "08:30–09:00", fixed: true },
+  { id: "work-am",   label: "Working time",     time: "09:00–12:00" },
+  { id: "lunch",     label: "Lunch",            time: "12:00–13:00" },
+  { id: "work-pm",   label: "Working time",     time: "13:00–15:00" },
+  { id: "pickup",    label: "School pickup",   time: "15:00–15:30", fixed: true },
+  { id: "family",    label: "Family time",      time: "15:30–19:30", fixed: true },
+  { id: "evening",   label: "Evening",          time: "19:30–22:00" }
+];
+// Wednesday evening override: Weekly group (fixed)
+const WEEKEND_BLOCKS = [
+  { id: "morning",   label: "Morning",   time: "AM" },
+  { id: "afternoon", label: "Afternoon", time: "PM" }
+];
+
+// Pre-seeded fixed items
+const SEEDED_FIXED = {
+  // Weekly group every Wed evening
+  wed_evening: { title: "Weekly group", category: "family", fixed: true }
+  // Sun morning church handled as a fixed block
+};
+
+// Calendar events pulled from Google Calendar (read-only overlays).
+// owner: "M" = Matthew (📅 teal), "F" = Fiona (👩 purple)
+const CAL_EVENTS = [
+  // Personal calendar
+  { date: "2026-04-21", time: "14:00–15:00", title: "Dentist appointment",   block: "work-pm",   owner: "M" },
+  { date: "2026-04-23", time: "18:00–19:00", title: "Book club",             block: "family",    owner: "M" },
+  { date: "2026-04-30", time: "17:30–20:30", title: "Colleague's leaving drinks", block: "evening", owner: "M" },
+  { date: "2026-05-03", time: "16:00–18:00", title: "Friends visiting",      block: "afternoon", owner: "M" },
+  { date: "2026-05-09", allDay: true,        title: "Friend's birthday",     owner: "M" },
+  { date: "2026-05-13", time: "10:30–11:30", title: "Coach call",            block: "work-am",   owner: "M" },
+  { date: "2026-05-16", allDay: true,        title: "Family member's birthday", owner: "M" },
+  { date: "2026-05-24", time: "16:00–17:30", title: "Talk preparation",      block: "afternoon", owner: "M" },
+  // Partner calendar
+  { date: "2026-04-20", time: "09:30–11:15", title: "Weekly study group",    block: "work-am",   owner: "F" },
+  { date: "2026-04-20", time: "17:00–17:30", title: "Kid's swimming lesson", block: "family",    owner: "F" },
+  { date: "2026-04-22", allDay: true,        title: "School dress-up day",   owner: "F" },
+  { date: "2026-04-23", allDay: true,        title: "School photo",          owner: "F" },
+  { date: "2026-04-23", time: "15:30–16:30", title: "Kid's dance class",     block: "family",    owner: "F" },
+  { date: "2026-04-24", time: "10:00–11:30", title: "Toddler group",         block: "work-am",   owner: "F" },
+  { date: "2026-04-27", time: "09:30–11:15", title: "Weekly study group",    block: "work-am",   owner: "F" },
+  { date: "2026-04-28", time: "13:30–14:30", title: "Parent-school meeting", block: "work-pm",   owner: "F" },
+  { date: "2026-05-01", allDay: true,        title: "INSET day",             owner: "F" },
+  { date: "2026-05-07", time: "15:30–16:30", title: "Kid's dance class",     block: "family",    owner: "F" },
+  { date: "2026-05-11", time: "09:30–11:15", title: "Weekly study group",    block: "work-am",   owner: "F" },
+  { date: "2026-05-15", time: "10:00–11:30", title: "Toddler group",         block: "work-am",   owner: "F" },
+  { date: "2026-05-20", time: "09:20–10:20", title: "Optician appointment",  block: "work-am",   owner: "F" },
+  { date: "2026-05-21", allDay: true,        title: "International day",     owner: "F" }
+];
+
+// In-memory task store. key = `${iso}|${blockId}`, value = array of tasks.
+let tasks = {};
+
+// Recurring-task templates — click a chip then a block to drop a copy in.
+const DEFAULT_TEMPLATES = [
+  { id: "talk",  name: "Presentation prep", title: "Presentation prep", category: "project", wife: false, notes: "" },
+  { id: "blog",  name: "Blog post",         title: "Write blog post",    category: "project", wife: false, notes: "" },
+  { id: "read",  name: "Reading / research",title: "Reading / research", category: "project", wife: false, notes: "" }
+];
+let templates = DEFAULT_TEMPLATES.map(t => ({...t}));
+
+// UI state
+let activeWeek = 0;
+let activeView = "week"; // "week" | "todo"
+let editing = null; // { iso, blockId, index (or null for new) }
+let placing = null; // template in "place mode"
+let showDoneTodos = false;
+const INBOX = "INBOX"; // special tasks[] key for the unscheduled to-do list
+
+// ------------- Helpers -------------
+function iso(d) {
+  // Use LOCAL date components so BST/DST doesn't roll the date back one day.
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+function addDays(d, n) {
+  const c = new Date(d); c.setDate(c.getDate() + n); return c;
+}
+function dateFmt(d) {
+  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+function dayName(d) {
+  return d.toLocaleDateString("en-GB", { weekday: "short" });
+}
+function key(iso, blockId) {
+  if (iso === INBOX) return INBOX;
+  return `${iso}|${blockId}`;
+}
+
+// Parse a time range like "9:00–10:30", "08:30 - 10:00", "9-10:30".
+// Returns {start, end} in minutes-from-midnight, or null if unparseable.
+function parseTimeRange(s) {
+  if (!s) return null;
+  const m = s.match(/^\s*(\d{1,2})(?::(\d{2}))?\s*[–—\-]\s*(\d{1,2})(?::(\d{2}))?\s*$/);
+  if (!m) return null;
+  const h1 = +m[1], mm1 = +(m[2] || 0), h2 = +m[3], mm2 = +(m[4] || 0);
+  const start = h1*60 + mm1, end = h2*60 + mm2;
+  if (end <= start) return null;
+  return { start, end };
+}
+function fmtMin(min) {
+  const h = Math.floor(min/60), m = min % 60;
+  return String(h).padStart(2,"0") + ":" + String(m).padStart(2,"0");
+}
+function blocksForDate(date) {
+  const dow = date.getDay();
+  return (dow === 0 || dow === 6) ? WEEKEND_BLOCKS : WEEKDAY_BLOCKS;
+}
+// Find timed things on `targetIso` whose ranges overlap `timeStr`.
+// excludeSelf marks the current item so it doesn't clash with itself.
+//   excludeSelf = { inbox: true, idx }           // for inbox items
+//   excludeSelf = { iso, blockId, idx }          // for regular grid tasks
+function getClashes(targetIso, timeStr, excludeSelf) {
+  const tr = parseTimeRange(timeStr);
+  if (!tr) return [];
+  const overlap = (a, b) => a.start < b.end && a.end > b.start;
+  const hits = [];
+
+  // Calendar events (personal + partner)
+  CAL_EVENTS.forEach(e => {
+    if (e.date !== targetIso || e.allDay) return;
+    const er = parseTimeRange(e.time);
+    if (!er) return;
+    if (overlap(tr, er)) {
+      const who = e.owner === "F" ? "Partner’s cal" : "Your cal";
+      hits.push({ title: e.title, time: e.time, source: `📅 ${who}` });
+    }
+  });
+
+  // Regular grid tasks on this day, any block
+  Object.keys(tasks).forEach(k => {
+    if (k === INBOX) return;
+    const [iso, blockId] = k.split("|");
+    if (iso !== targetIso) return;
+    (tasks[k] || []).forEach((t, i) => {
+      if (excludeSelf && !excludeSelf.inbox &&
+          excludeSelf.iso === iso && excludeSelf.blockId === blockId && excludeSelf.idx === i) return;
+      const otr = parseTimeRange(t.time);
+      if (!otr) return;
+      if (overlap(tr, otr)) hits.push({ title: t.title, time: t.time, source: "your schedule" });
+    });
+  });
+
+  // Scheduled To-do items on this day
+  (tasks[INBOX] || []).forEach((t, i) => {
+    if (!t.scheduledAt || t.scheduledAt.iso !== targetIso) return;
+    if (excludeSelf && excludeSelf.inbox && excludeSelf.idx === i) return;
+    const otr = parseTimeRange(t.time);
+    if (!otr) return;
+    if (overlap(tr, otr)) hits.push({ title: t.title, time: t.time, source: "To-do list" });
+  });
+
+  return hits;
+}
+
+// Which block IDs on this date does [taskRange] overlap (excluding its own block)?
+function overflowTargets(date, ownBlockId, taskRange) {
+  const out = [];
+  blocksForDate(date).forEach(b => {
+    if (b.id === ownBlockId) return;
+    const br = parseTimeRange(b.time);
+    if (!br) return;
+    if (taskRange.start < br.end && taskRange.end > br.start) {
+      out.push({ blockId: b.id, label: b.label, time: b.time, range: br });
+    }
+  });
+  return out;
+}
+
+// ------------- Render -------------
+function renderTabs() {
+  const tabs = document.getElementById("weekTabs");
+  tabs.innerHTML = "";
+  for (let w = 0; w < WEEK_COUNT; w++) {
+    const d = addDays(START_DATE, w * 7);
+    const btn = document.createElement("button");
+    btn.className = "tab" + (activeView === "week" && w === activeWeek ? " active" : "");
+    btn.innerHTML = `Week ${w+1}<span class="sub">w/c ${d.toLocaleDateString("en-GB",{day:"numeric",month:"short"})}</span>`;
+    btn.onclick = () => { activeView = "week"; activeWeek = w; render(); };
+    tabs.appendChild(btn);
+  }
+  const todoBtn = document.createElement("button");
+  todoBtn.className = "tab todo-tab" + (activeView === "todo" ? " active" : "");
+  const openCount = (tasks[INBOX] || []).filter(t => !t.done).length;
+  todoBtn.innerHTML = `📋 To-do list<span class="sub">${openCount} open</span>`;
+  todoBtn.onclick = () => { activeView = "todo"; render(); };
+  tabs.appendChild(todoBtn);
+}
+
+function render() {
+  renderTabs();
+  renderTemplatesBar();
+  const container = document.getElementById("weekContainer");
+  container.innerHTML = "";
+  if (activeView === "todo") {
+    container.appendChild(renderTodoView());
+  } else {
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    const weekStart = addDays(START_DATE, activeWeek * 7);
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(weekStart, i);
+      grid.appendChild(renderDay(d));
+    }
+    container.appendChild(grid);
+  }
+  renderSyncList();
+  persist(); // auto-save state to backend when in server mode (no-op otherwise)
+}
+
+function renderTodoView() {
+  const wrap = document.createElement("div");
+  wrap.className = "todo-view";
+
+  const list = tasks[INBOX] || [];
+  const openItems = list.filter(t => !t.done);
+  const doneItems = list.filter(t => t.done);
+
+  const header = document.createElement("div");
+  header.className = "todo-header";
+  header.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="primary" id="addTodoBtn">+ Add to to-do list</button>
+      <span class="count">${openItems.length} open · ${doneItems.length} done</span>
+    </div>
+    <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer">
+      <input type="checkbox" id="showDoneToggle" ${showDoneTodos ? "checked" : ""}> Show completed
+    </label>
+  `;
+  wrap.appendChild(header);
+
+  const listEl = document.createElement("div");
+  listEl.className = "todo-list";
+  const visible = showDoneTodos ? list : openItems;
+  if (!visible.length) {
+    const empty = document.createElement("div");
+    empty.className = "todo-empty";
+    empty.textContent = openItems.length === 0 && doneItems.length > 0
+      ? "Nothing outstanding. Tick \"Show completed\" to see what's finished."
+      : "Nothing here yet. Click \"+ Add to to-do list\" to capture something.";
+    listEl.appendChild(empty);
+  } else {
+    visible.forEach(t => {
+      const idx = list.indexOf(t); // index in original array (for editing)
+      listEl.appendChild(renderTodoItem(t, idx));
+    });
+  }
+  wrap.appendChild(listEl);
+
+  // Wire header controls after appending so DOM elements exist
+  setTimeout(() => {
+    const a = document.getElementById("addTodoBtn");
+    if (a) a.onclick = () => openModal(INBOX, INBOX, null);
+    const s = document.getElementById("showDoneToggle");
+    if (s) s.onchange = () => { showDoneTodos = s.checked; render(); };
+  }, 0);
+
+  return wrap;
+}
+
+function renderTodoItem(t, idx) {
+  const row = document.createElement("div");
+  const isScheduled = !!t.scheduledAt;
+  row.className = "todo-item" + (t.done ? " done" : "") + (isScheduled ? " scheduled" : "");
+
+  let scheduledBadge = "";
+  if (isScheduled) {
+    const d = new Date(t.scheduledAt.iso);
+    const bd = (WEEKDAY_BLOCKS.concat(WEEKEND_BLOCKS)).find(b => b.id === t.scheduledAt.blockId);
+    const dayStr = d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    const blockStr = bd ? `${bd.label} (${bd.time})` : t.scheduledAt.blockId;
+    const timeStr = t.time ? ` · ${escapeHtml(t.time)}` : "";
+    scheduledBadge = `<div class="todo-sched">📅 ${dayStr} · ${escapeHtml(blockStr)}${timeStr}</div>`;
+  }
+
+  const actions = isScheduled
+    ? `<button class="sched-btn" data-idx="${idx}">Reschedule</button>
+       <button class="unsched-btn" data-idx="${idx}">Unschedule</button>
+       <button class="edit-btn" data-idx="${idx}">Edit</button>`
+    : `<button class="sched-btn" data-idx="${idx}">Schedule</button>
+       <button class="edit-btn" data-idx="${idx}">Edit</button>`;
+
+  row.innerHTML = `
+    <input type="checkbox" class="todo-check" ${t.done ? "checked" : ""} data-idx="${idx}">
+    <div class="todo-body">
+      <div class="todo-title">
+        <span class="todo-cat cat-${t.category}"></span>
+        ${t.wife ? `<span class="wife">P</span>` : ""}
+        ${escapeHtml(t.title)}
+      </div>
+      ${scheduledBadge}
+      ${t.notes ? `<div class="todo-meta">${escapeHtml(t.notes)}</div>` : ""}
+    </div>
+    <div class="todo-actions">${actions}</div>
+  `;
+
+  row.querySelector(".todo-check").onchange = (e) => {
+    (tasks[INBOX] || [])[idx].done = e.target.checked;
+    render();
+  };
+  row.querySelector(".sched-btn").onclick = () => openScheduleModal(idx);
+  const unsched = row.querySelector(".unsched-btn");
+  if (unsched) unsched.onclick = () => {
+    const item = (tasks[INBOX]||[])[idx];
+    if (!item) return;
+    delete item.scheduledAt;
+    item.time = "";
+    render();
+  };
+  row.querySelector(".edit-btn").onclick = () => openModal(INBOX, INBOX, idx);
+  return row;
+}
+
+function renderTemplatesBar() {
+  const bar = document.getElementById("templatesBar");
+  bar.innerHTML = `<span class="tlabel">Quick add:</span>`;
+  templates.forEach((t, i) => {
+    const chip = document.createElement("button");
+    chip.className = "tpl-chip cat-" + t.category + (placing && placing.id === t.id ? " active" : "");
+    chip.title = "Click then click a block to add";
+    chip.innerHTML = escapeHtml(t.name) +
+      ` <span class="tpl-edit" title="Edit template">✎</span>` +
+      `<span class="del" data-idx="${i}" title="Delete template">×</span>`;
+    chip.onclick = (e) => {
+      if (e.target.classList.contains("del")) {
+        if (confirm("Delete template \"" + t.name + "\"?")) { templates.splice(i,1); renderTemplatesBar(); }
+        return;
+      }
+      if (e.target.classList.contains("tpl-edit")) {
+        editTemplate(t);
+        return;
+      }
+      enterPlacementMode(t);
+    };
+    bar.appendChild(chip);
+  });
+  const neu = document.createElement("button");
+  neu.className = "tpl-new";
+  neu.textContent = "+ new template";
+  neu.onclick = newTemplate;
+  bar.appendChild(neu);
+}
+
+let editingTplId = null; // id of template being edited, or null when creating new
+
+function newTemplate() {
+  editingTplId = null;
+  document.getElementById("tplModalTitle").textContent = "New template";
+  document.getElementById("tplSaveBtn").textContent = "Create template";
+  document.getElementById("tpl_name").value = "";
+  document.getElementById("tpl_title").value = "";
+  document.getElementById("tpl_cat").value = "project";
+  document.getElementById("tpl_wife").checked = false;
+  document.getElementById("tplModal").classList.add("open");
+  setTimeout(() => document.getElementById("tpl_name").focus(), 50);
+}
+function editTemplate(t) {
+  editingTplId = t.id;
+  document.getElementById("tplModalTitle").textContent = "Edit template";
+  document.getElementById("tplSaveBtn").textContent = "Save changes";
+  document.getElementById("tpl_name").value = t.name || "";
+  document.getElementById("tpl_title").value = t.title || "";
+  document.getElementById("tpl_cat").value = t.category || "project";
+  document.getElementById("tpl_wife").checked = !!t.wife;
+  document.getElementById("tplModal").classList.add("open");
+  setTimeout(() => document.getElementById("tpl_name").focus(), 50);
+}
+function closeTplModal() { document.getElementById("tplModal").classList.remove("open"); editingTplId = null; }
+document.getElementById("tplCancelBtn").onclick = closeTplModal;
+document.getElementById("tplSaveBtn").onclick = () => {
+  const name = document.getElementById("tpl_name").value.trim();
+  if (!name) { document.getElementById("tpl_name").focus(); return; }
+  const title = document.getElementById("tpl_title").value.trim() || name;
+  const cat = document.getElementById("tpl_cat").value;
+  const wife = document.getElementById("tpl_wife").checked;
+  if (editingTplId) {
+    const t = templates.find(x => x.id === editingTplId);
+    if (t) { t.name = name; t.title = title; t.category = cat; t.wife = wife; }
+  } else {
+    templates.push({ id: "t" + Date.now(), name, title, category: cat, wife, notes: "" });
+  }
+  closeTplModal();
+  renderTemplatesBar();
+};
+document.getElementById("tplModal").addEventListener("click", (e) => {
+  if (e.target.id === "tplModal") closeTplModal();
+});
+
+function enterPlacementMode(t) {
+  placing = t;
+  document.body.classList.add("placing");
+  document.getElementById("placementHint").hidden = false;
+  document.getElementById("placementName").textContent = t.name;
+  renderTemplatesBar();
+}
+function exitPlacementMode() {
+  placing = null;
+  document.body.classList.remove("placing");
+  document.getElementById("placementHint").hidden = true;
+  renderTemplatesBar();
+}
+document.getElementById("cancelPlace").onclick = exitPlacementMode;
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    exitPlacementMode();
+    if (editing) closeModal();
+    closeTplModal();
+    closeScheduleModal();
+  }
+});
+
+function placeHere(iso, blockId) {
+  if (!placing) return;
+  const k = key(iso, blockId);
+  if (!tasks[k]) tasks[k] = [];
+  tasks[k].push({
+    title: placing.title, notes: placing.notes || "", category: placing.category,
+    wife: !!placing.wife, done: false, time: ""
+  });
+  render();
+}
+
+function renderDay(date) {
+  const dayEl = document.createElement("div");
+  dayEl.className = "day";
+  const dIso = iso(date);
+  if (dIso === TODAY_ISO) dayEl.classList.add("today");
+  else if (dIso < TODAY_ISO) dayEl.classList.add("past");
+
+  const head = document.createElement("header");
+  head.innerHTML = `<span>${dayName(date)}</span><span class="date">${date.getDate()} ${date.toLocaleDateString("en-GB",{month:"short"})}</span>`;
+  dayEl.appendChild(head);
+
+  const blocksEl = document.createElement("div");
+  blocksEl.className = "blocks";
+
+  const dow = date.getDay(); // 0=Sun, 6=Sat
+  const isWeekend = (dow === 0 || dow === 6);
+  const isSunday = dow === 0;
+  const isWednesday = dow === 3;
+
+  // All-day calendar events at the top of the day
+  const allDay = CAL_EVENTS.filter(e => e.date === iso(date) && e.allDay);
+  if (allDay.length) {
+    const wrap = document.createElement("div");
+    wrap.className = "block";
+    wrap.innerHTML = `<div class="label"><span class="name">All day</span></div>`;
+    allDay.forEach(e => {
+      const ev = document.createElement("div");
+      ev.className = "calendar-event owner-" + (e.owner || "M");
+      ev.textContent = e.title;
+      wrap.appendChild(ev);
+    });
+    blocksEl.appendChild(wrap);
+  }
+
+  const blocks = isWeekend ? WEEKEND_BLOCKS : WEEKDAY_BLOCKS;
+  blocks.forEach(b => {
+    const blockEl = document.createElement("div");
+    blockEl.className = "block" + (b.fixed ? " fixed" : "");
+
+    // Sunday morning fixed commitment
+    let isChurch = isSunday && b.id === "morning";
+    // Wednesday evening fixed commitment
+    let isChurchGroup = isWednesday && b.id === "evening";
+
+    const label = document.createElement("div");
+    label.className = "label";
+    let name = b.label;
+    if (isChurch) name = "Weekly commitment";
+    if (isChurchGroup) name = "Weekly group";
+    label.innerHTML = `<span class="name">${name}</span><span class="time">${b.time}</span>`;
+    blockEl.appendChild(label);
+
+    // Calendar events timed within this block
+    const timedEvents = CAL_EVENTS.filter(e => e.date === iso(date) && !e.allDay && e.block === b.id);
+    timedEvents.forEach(e => {
+      const ev = document.createElement("div");
+      ev.className = "calendar-event owner-" + (e.owner || "M");
+      ev.innerHTML = `<span class="ce-time">${e.time}</span> · ${escapeHtml(e.title)}`;
+      blockEl.appendChild(ev);
+    });
+
+    if (b.fixed || isChurch || isChurchGroup) {
+      blockEl.classList.add("fixed");
+      // Fully fixed: no tasks, no add button (breakfast/shower/pickup/family/church).
+    } else {
+      // Render tasks (sorted by time prefix if present)
+      const k = key(iso(date), b.id);
+      const list = (tasks[k] || []).slice().sort((a,b) => (a.time||"").localeCompare(b.time||""));
+      list.forEach((t) => {
+        const realIdx = (tasks[k]||[]).indexOf(t);
+        blockEl.appendChild(renderTask(t, iso(date), b.id, realIdx));
+      });
+      // Render scheduled To-do-list items that point at this slot
+      const inboxList = tasks[INBOX] || [];
+      const dateIsoStr = iso(date);
+      inboxList.forEach((t, inboxIdx) => {
+        if (t.scheduledAt && t.scheduledAt.iso === dateIsoStr && t.scheduledAt.blockId === b.id) {
+          blockEl.appendChild(renderInboxTaskInGrid(t, inboxIdx));
+        }
+      });
+      const add = document.createElement("button");
+      add.className = "add-btn";
+      add.textContent = b.id === "lunch" ? "+ add lunch plan" : "+ add task";
+      add.onclick = (e) => { e.stopPropagation(); openModal(iso(date), b.id, null); };
+      blockEl.appendChild(add);
+
+      // Placement-mode: clicking anywhere on a non-fixed block drops the template
+      blockEl.addEventListener("click", (e) => {
+        if (!placing) return;
+        if (e.target.closest(".task") || e.target.closest(".add-btn") || e.target.closest(".calendar-event")) return;
+        placeHere(iso(date), b.id);
+      });
+    }
+
+    // Render ghost echoes: tasks from OTHER blocks on this day whose time overlaps this block.
+    renderGhosts(blockEl, date, b.id);
+
+    blocksEl.appendChild(blockEl);
+  });
+
+  dayEl.appendChild(blocksEl);
+  return dayEl;
+}
+
+function renderTask(t, isoDate, blockId, idx) {
+  const el = document.createElement("div");
+  el.className = "task cat-" + t.category + (t.done ? " done" : "");
+  const timeBadge = t.time ? `<span class="tasktime">${escapeHtml(t.time)}</span>` : "";
+  el.innerHTML = timeBadge + (t.wife ? `<span class="wife">P</span>` : "") + escapeHtml(t.title);
+  el.onclick = (e) => { e.stopPropagation(); openModal(isoDate, blockId, idx); };
+  return el;
+}
+
+// Render a scheduled inbox item inside a grid block. Visually identical to a regular task;
+// the difference is only that clicking edits via (INBOX, INBOX, inboxIdx) so the to-do linkage stays intact.
+function renderInboxTaskInGrid(t, inboxIdx) {
+  const el = document.createElement("div");
+  el.className = "task cat-" + t.category + (t.done ? " done" : "");
+  const timeBadge = t.time ? `<span class="tasktime">${escapeHtml(t.time)}</span>` : "";
+  el.innerHTML = timeBadge + (t.wife ? `<span class="wife">P</span>` : "") + escapeHtml(t.title);
+  el.onclick = (e) => { e.stopPropagation(); openModal(INBOX, INBOX, inboxIdx); };
+  return el;
+}
+
+// Called when the modal opens and when the Time input changes.
+function updateTimeWarning() {
+  const w = document.getElementById("timeWarning");
+  if (!editing) { w.hidden = true; return; }
+  let { iso: isoStr, blockId, idx } = editing;
+  if (isoStr === INBOX) {
+    const isNew = (idx === null || idx === undefined);
+    if (isNew) {
+      // New to-do item: use the schedule-now dropdowns if the user ticked the box
+      const on = document.getElementById("f_schedule") && document.getElementById("f_schedule").checked;
+      if (!on) { w.hidden = true; return; }
+      isoStr = document.getElementById("f_sched_day").value;
+      blockId = document.getElementById("f_sched_block").value;
+    } else {
+      const t = (tasks[INBOX]||[])[idx];
+      if (t && t.scheduledAt) { isoStr = t.scheduledAt.iso; blockId = t.scheduledAt.blockId; }
+      else { w.hidden = true; return; }
+    }
+  }
+  const d = new Date(isoStr);
+  const blockDef = blocksForDate(d).find(b => b.id === blockId);
+  const br = blockDef ? parseTimeRange(blockDef.time) : null;
+  const timeStr = document.getElementById("f_time").value;
+  const tr = parseTimeRange(timeStr);
+
+  const warnings = [];
+
+  // Overflow (task extends outside its block)
+  if (br && tr) {
+    const before = Math.max(0, br.start - tr.start);
+    const after  = Math.max(0, tr.end - br.end);
+    if (before || after) {
+      const targets = overflowTargets(d, blockId, tr).map(x => x.label).filter((v,i,a) => a.indexOf(v) === i);
+      const parts = [];
+      if (before) parts.push(`starts ${before} min before this slot`);
+      if (after)  parts.push(`runs ${after} min past this slot`);
+      warnings.push(parts.join("; ") + (targets.length ? ` — impinges on: ${targets.join(", ")}` : ""));
+    }
+  }
+
+  // Clashes (other timed items overlapping)
+  if (tr) {
+    const excludeSelf = (editing && editing.iso === INBOX)
+      ? { inbox: true, idx: editing.idx }
+      : (editing ? { iso: editing.iso, blockId: editing.blockId, idx: editing.idx } : null);
+    const clashes = getClashes(isoStr, timeStr, excludeSelf);
+    if (clashes.length) {
+      const list = clashes.map(c => `"${c.title}" ${c.time} (${c.source})`).join("; ");
+      warnings.push(`clashes with ${list}`);
+    }
+  }
+
+  if (warnings.length) {
+    w.textContent = "⚠ " + warnings.join(" · ");
+    w.hidden = false;
+  } else {
+    w.hidden = true;
+  }
+}
+
+// Render faint "ghost" stubs for any task on the same day whose time range overlaps
+// the given block but which lives in a DIFFERENT block.
+function renderGhosts(blockEl, date, blockId) {
+  const blockDef = blocksForDate(date).find(b => b.id === blockId);
+  const br = blockDef ? parseTimeRange(blockDef.time) : null;
+  if (!br) return;
+  blocksForDate(date).forEach(otherBlock => {
+    if (otherBlock.id === blockId) return;
+    const k = key(iso(date), otherBlock.id);
+    const list = tasks[k] || [];
+    list.forEach(t => {
+      const tr = parseTimeRange(t.time);
+      if (!tr) return;
+      if (tr.start < br.end && tr.end > br.start) {
+        const otherRange = parseTimeRange(otherBlock.time);
+        const arrow = otherRange && otherRange.start < br.start ? "↑" : "↓";
+        const ghost = document.createElement("div");
+        ghost.className = "task ghost cat-" + t.category;
+        ghost.innerHTML =
+          `<span class="ghost-arrow">${arrow}</span>` +
+          `<span class="tasktime">${escapeHtml(t.time)}</span>` +
+          escapeHtml(t.title) +
+          `<span class="ghost-from">from ${escapeHtml(otherBlock.label)}</span>`;
+        blockEl.appendChild(ghost);
+      }
+    });
+  });
+}
+
+function escapeHtml(s) {
+  return (s||"").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+// ------------- Modal -------------
+function openModal(iso, blockId, idx) {
+  editing = { iso, blockId, idx };
+  const k = key(iso, blockId);
+  const t = (idx !== null && idx !== undefined) ? (tasks[k]||[])[idx] : null;
+  const isInbox = (iso === INBOX);
+  const schedAt = (isInbox && t && t.scheduledAt) ? t.scheduledAt : null;
+
+  // Modal title
+  document.getElementById("modalTitle").textContent = t
+    ? (isInbox ? "Edit to-do item" : "Edit task")
+    : (isInbox ? "New to-do item" : "New task");
+
+  // Context line
+  let ctx;
+  if (isInbox && !schedAt) {
+    ctx = "Parked in To-do list — not yet scheduled.";
+  } else if (isInbox && schedAt) {
+    const d = new Date(schedAt.iso);
+    const bd = (WEEKDAY_BLOCKS.concat(WEEKEND_BLOCKS)).find(b=>b.id===schedAt.blockId);
+    ctx = `📋 From To-do list · ${d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} · ${bd?bd.label:""} ${bd?bd.time:""}`;
+  } else {
+    const d = new Date(iso);
+    const bd = (WEEKDAY_BLOCKS.concat(WEEKEND_BLOCKS)).find(b=>b.id===blockId);
+    ctx = `${d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})} · ${bd?bd.label:""} ${bd?bd.time:""}`;
+  }
+  document.getElementById("modalCtx").textContent = ctx;
+
+  // Field values
+  document.getElementById("f_title").value = t ? t.title : "";
+  document.getElementById("f_time").value  = t ? (t.time||"") : "";
+  document.getElementById("f_notes").value = t ? (t.notes||"") : "";
+  document.getElementById("f_cat").value = t ? t.category
+    : (isInbox ? "project" : defaultCategoryFor(blockId, new Date(iso)));
+  document.getElementById("f_wife").checked = t ? !!t.wife
+    : (isInbox ? false : defaultWifeFor(blockId, new Date(iso)));
+  document.getElementById("f_done").checked = t ? !!t.done : false;
+  document.getElementById("f_track").checked = false;
+
+  // Reset Time-field placement to its default (under Task) on every open
+  placeTimeInDefaultPosition();
+  // Time field only applies when the task has a slot (scheduled)
+  const showTime = !isInbox || !!schedAt;
+  document.getElementById("f_time").closest(".field").style.display = showTime ? "" : "none";
+
+  // "Mark done" only applies when editing an existing to-do-list task
+  document.getElementById("f_doneField").style.display = (isInbox && t) ? "flex" : "none";
+  // "Also track on To-do list" only when creating a new task from a grid slot
+  const isNewFromGrid = !t && !isInbox;
+  document.getElementById("f_trackField").style.display = isNewFromGrid ? "flex" : "none";
+
+  // "Schedule it now" shows only when creating a new To-do list item from the to-do tab
+  const isNewInbox = !t && isInbox;
+  const schedField = document.getElementById("f_scheduleField");
+  const schedDetails = document.getElementById("f_scheduleDetails");
+  const timeField = document.getElementById("f_time").closest(".field");
+  if (isNewInbox) {
+    schedField.style.display = "flex";
+    document.getElementById("f_schedule").checked = false;
+    schedDetails.hidden = true;
+    timeField.style.display = "none";
+    // Populate dropdowns now so they're ready if the user ticks the box
+    populateDaySelect(document.getElementById("f_sched_day"));
+    populateBlockSelect(document.getElementById("f_sched_block"), document.getElementById("f_sched_day").value);
+    document.getElementById("f_sched_day").onchange = () => {
+      populateBlockSelect(document.getElementById("f_sched_block"), document.getElementById("f_sched_day").value);
+      updateTimeWarning();
+    };
+    document.getElementById("f_sched_block").onchange = updateTimeWarning;
+    document.getElementById("f_schedule").onchange = () => {
+      const on = document.getElementById("f_schedule").checked;
+      schedDetails.hidden = !on;
+      timeField.style.display = on ? "" : "none";
+      if (on) placeTimeInSchedulePanel(); else placeTimeInDefaultPosition();
+      updateTimeWarning();
+    };
+  } else {
+    schedField.style.display = "none";
+    schedDetails.hidden = true;
+  }
+
+  // Buttons: delete always available on edit; send-to-todo adjusts by context
+  document.getElementById("deleteBtn").style.display = t ? "inline-block" : "none";
+  const stt = document.getElementById("sendToTodoBtn");
+  if (!t) {
+    stt.style.display = "none";
+  } else if (!isInbox) {
+    stt.style.display = "inline-block"; stt.textContent = "To to-do list";
+  } else if (schedAt) {
+    stt.style.display = "inline-block"; stt.textContent = "Unschedule";
+  } else {
+    stt.style.display = "none";
+  }
+
+  document.getElementById("modal").classList.add("open");
+  updateTimeWarning();
+  setTimeout(()=>document.getElementById("f_title").focus(), 50);
+}
+// Live-update the warning as the user types a time
+document.getElementById("f_time").addEventListener("input", updateTimeWarning);
+
+// Remember the Time-field's default position so we can move it in/out of the schedule-now panel
+const _timeFieldEl = document.getElementById("f_time").closest(".field");
+const _timeFieldHome = { parent: _timeFieldEl.parentNode, next: _timeFieldEl.nextSibling };
+function placeTimeInSchedulePanel() {
+  document.getElementById("f_scheduleDetails").appendChild(_timeFieldEl);
+}
+function placeTimeInDefaultPosition() {
+  if (_timeFieldEl.parentNode !== _timeFieldHome.parent) {
+    _timeFieldHome.parent.insertBefore(_timeFieldEl, _timeFieldHome.next);
+  }
+}
+
+function defaultCategoryFor(blockId, date) {
+  if (blockId === "work-am" || blockId === "work-pm") return "work";
+  if (blockId === "lunch") return "family";
+  if (blockId === "family" || blockId === "evening") return "family";
+  if (blockId === "morning" || blockId === "afternoon") return "family";
+  return "project";
+}
+function defaultWifeFor(blockId, date) {
+  // Evenings and weekends default to needing wife; lunch defaults off (could be a colleague)
+  if (blockId === "evening") return true;
+  if (blockId === "morning" || blockId === "afternoon") return true;
+  return false;
+}
+
+function closeModal() { document.getElementById("modal").classList.remove("open"); editing = null; }
+
+document.getElementById("cancelBtn").onclick = closeModal;
+document.getElementById("saveBtn").onclick = () => {
+  if (!editing) return;
+  const { iso, blockId, idx } = editing;
+  const entry = {
+    title: document.getElementById("f_title").value.trim(),
+    time: document.getElementById("f_time").value.trim(),
+    notes: document.getElementById("f_notes").value.trim(),
+    category: document.getElementById("f_cat").value,
+    wife: document.getElementById("f_wife").checked,
+    done: document.getElementById("f_done").checked
+  };
+  if (!entry.title) { closeModal(); return; }
+
+  const isNew = (idx === null || idx === undefined);
+  const isNewFromGrid = isNew && iso !== INBOX;
+  const isNewInbox = isNew && iso === INBOX;
+  const alsoTrack = isNewFromGrid && document.getElementById("f_track").checked;
+  const scheduleNow = isNewInbox && document.getElementById("f_schedule").checked;
+
+  if (alsoTrack) {
+    // Create as a tracked to-do item, already scheduled for this slot
+    if (!tasks[INBOX]) tasks[INBOX] = [];
+    tasks[INBOX].push({ ...entry, scheduledAt: { iso, blockId } });
+  } else if (scheduleNow) {
+    // New to-do item scheduled at creation time
+    const schedIso = document.getElementById("f_sched_day").value;
+    const schedBlock = document.getElementById("f_sched_block").value;
+    if (!tasks[INBOX]) tasks[INBOX] = [];
+    tasks[INBOX].push({ ...entry, scheduledAt: { iso: schedIso, blockId: schedBlock } });
+  } else {
+    const k = key(iso, blockId);
+    if (!tasks[k]) tasks[k] = [];
+    if (isNew) {
+      // For a brand-new unscheduled inbox item, strip any leftover time value
+      if (iso === INBOX) entry.time = "";
+      tasks[k].push(entry);
+    } else {
+      // Merge fields into existing object so metadata like scheduledAt survives
+      Object.assign(tasks[k][idx], entry);
+    }
+  }
+  persist();
+  closeModal();
+  render();
+};
+document.getElementById("deleteBtn").onclick = () => {
+  if (!editing) return;
+  const { iso, blockId, idx } = editing;
+  const k = key(iso, blockId);
+  if (tasks[k] && idx !== null && idx !== undefined) {
+    tasks[k].splice(idx, 1);
+    if (!tasks[k].length) delete tasks[k];
+  }
+  persist();
+  closeModal();
+  render();
+};
+
+// "To to-do list" (for grid tasks) / "Unschedule" (for scheduled inbox items)
+document.getElementById("sendToTodoBtn").onclick = () => {
+  if (!editing) return;
+  const { iso: isoStr, blockId, idx } = editing;
+  if (idx === null || idx === undefined) return;
+
+  if (isoStr === INBOX) {
+    // Inbox item being unscheduled — clear scheduledAt, keep it in the to-do list
+    const t = (tasks[INBOX] || [])[idx];
+    if (!t) return;
+    // Take any current edits into the object first
+    t.title = document.getElementById("f_title").value.trim() || t.title;
+    t.notes = document.getElementById("f_notes").value.trim();
+    t.category = document.getElementById("f_cat").value;
+    t.wife = document.getElementById("f_wife").checked;
+    t.done = document.getElementById("f_done").checked;
+    t.time = ""; // block-relative time is meaningless when unscheduled
+    delete t.scheduledAt;
+    closeModal();
+    activeView = "todo";
+    render();
+  } else {
+    // Regular grid task — convert to inbox item (unscheduled)
+    const k = key(isoStr, blockId);
+    const arr = tasks[k] || [];
+    const t = arr[idx];
+    if (!t) return;
+    t.title = document.getElementById("f_title").value.trim() || t.title;
+    t.notes = document.getElementById("f_notes").value.trim();
+    t.category = document.getElementById("f_cat").value;
+    t.wife = document.getElementById("f_wife").checked;
+    t.done = document.getElementById("f_done").checked;
+    t.time = "";
+    if (!tasks[INBOX]) tasks[INBOX] = [];
+    tasks[INBOX].push(t);
+    arr.splice(idx, 1);
+    if (!arr.length) delete tasks[k];
+    closeModal();
+    activeView = "todo";
+    render();
+  }
+};
+
+// ---------- Schedule picker (shared helpers) ----------
+function populateDaySelect(sel, preferredIso) {
+  sel.innerHTML = "";
+  const endDate = addDays(START_DATE, WEEK_COUNT * 7 - 1);
+  let cursor = new Date();
+  cursor.setHours(0,0,0,0);
+  if (iso(cursor) < iso(START_DATE)) cursor = new Date(START_DATE);
+  while (iso(cursor) <= iso(endDate)) {
+    const opt = document.createElement("option");
+    opt.value = iso(cursor);
+    opt.textContent = cursor.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+    sel.appendChild(opt);
+    cursor = addDays(cursor, 1);
+  }
+  if (preferredIso) sel.value = preferredIso;
+}
+function populateBlockSelect(sel, dayIso, preferredBlockId) {
+  const d = new Date(dayIso);
+  const blocks = blocksForDate(d).filter(b => !b.fixed);
+  sel.innerHTML = "";
+  blocks.forEach(b => {
+    const opt = document.createElement("option");
+    opt.value = b.id;
+    opt.textContent = `${b.label} (${b.time})`;
+    sel.appendChild(opt);
+  });
+  if (preferredBlockId) sel.value = preferredBlockId;
+}
+
+let scheduling = null; // idx in tasks[INBOX]
+function openScheduleModal(idx) {
+  scheduling = idx;
+  const t = (tasks[INBOX] || [])[idx];
+  if (!t) return;
+  document.getElementById("scheduleCtx").textContent = `Choose when to do "${t.title}"`;
+  const daySel = document.getElementById("sched_day");
+  const blockSel = document.getElementById("sched_block");
+  const preferredDay = t.scheduledAt ? t.scheduledAt.iso : null;
+  const preferredBlock = t.scheduledAt ? t.scheduledAt.blockId : null;
+  populateDaySelect(daySel, preferredDay);
+  populateBlockSelect(blockSel, daySel.value, preferredBlock);
+  daySel.onchange = () => { populateBlockSelect(blockSel, daySel.value); updateScheduleWarning(); };
+  blockSel.onchange = updateScheduleWarning;
+  document.getElementById("sched_time").value = t.time || "";
+  updateScheduleWarning();
+  document.getElementById("scheduleModal").classList.add("open");
+}
+document.getElementById("sched_time").addEventListener("input", updateScheduleWarning);
+
+function updateScheduleWarning() {
+  const w = document.getElementById("schedWarning");
+  if (!w) return;
+  const dayIso = document.getElementById("sched_day").value;
+  const blockId = document.getElementById("sched_block").value;
+  const timeStr = document.getElementById("sched_time").value;
+  if (!dayIso || !blockId) { w.hidden = true; return; }
+  const d = new Date(dayIso);
+  const blockDef = blocksForDate(d).find(b => b.id === blockId);
+  const br = blockDef ? parseTimeRange(blockDef.time) : null;
+  const tr = parseTimeRange(timeStr);
+
+  const warnings = [];
+
+  if (br && tr) {
+    const before = Math.max(0, br.start - tr.start);
+    const after  = Math.max(0, tr.end - br.end);
+    if (before || after) {
+      const targets = overflowTargets(d, blockId, tr).map(x => x.label).filter((v,i,a) => a.indexOf(v) === i);
+      const parts = [];
+      if (before) parts.push(`starts ${before} min before this slot`);
+      if (after)  parts.push(`runs ${after} min past this slot`);
+      warnings.push(parts.join("; ") + (targets.length ? ` — impinges on: ${targets.join(", ")}` : ""));
+    }
+  }
+  if (tr) {
+    const excludeSelf = (scheduling !== null && scheduling !== undefined) ? { inbox: true, idx: scheduling } : null;
+    const clashes = getClashes(dayIso, timeStr, excludeSelf);
+    if (clashes.length) {
+      const list = clashes.map(c => `"${c.title}" ${c.time} (${c.source})`).join("; ");
+      warnings.push(`clashes with ${list}`);
+    }
+  }
+
+  if (warnings.length) {
+    w.textContent = "⚠ " + warnings.join(" · ");
+    w.hidden = false;
+  } else {
+    w.hidden = true;
+  }
+}
+function closeScheduleModal() { document.getElementById("scheduleModal").classList.remove("open"); scheduling = null; }
+document.getElementById("schedCancelBtn").onclick = closeScheduleModal;
+document.getElementById("schedSaveBtn").onclick = () => {
+  if (scheduling === null || scheduling === undefined) return;
+  const t = (tasks[INBOX] || [])[scheduling];
+  if (!t) { closeScheduleModal(); return; }
+  const targetIso = document.getElementById("sched_day").value;
+  const targetBlock = document.getElementById("sched_block").value;
+  t.scheduledAt = { iso: targetIso, blockId: targetBlock };
+  t.time = document.getElementById("sched_time").value.trim();
+  closeScheduleModal();
+  render();
+};
+document.getElementById("scheduleModal").addEventListener("click", (e) => {
+  if (e.target.id === "scheduleModal") closeScheduleModal();
+});
+
+// Close modal on backdrop click
+document.getElementById("modal").addEventListener("click", (e) => {
+  if (e.target.id === "modal") closeModal();
+});
+
+// ------------- Sync list -------------
+function collectSyncList() {
+  const items = [];
+  for (const k of Object.keys(tasks)) {
+    if (k === INBOX) continue;
+    const [iso, blockId] = k.split("|");
+    (tasks[k]||[]).forEach((t, i) => {
+      if (t.wife && !t.done && !t.pushed) {
+        const block = (WEEKDAY_BLOCKS.concat(WEEKEND_BLOCKS)).find(b=>b.id===blockId);
+        items.push({
+          source: "grid",
+          iso, blockId, idx: i,
+          title: t.title, notes: t.notes, category: t.category,
+          label: block?block.label:"",
+          blockTime: block?block.time:"",
+          taskTime: t.time || ""
+        });
+      }
+    });
+  }
+  // Scheduled to-do items also sync (they have a date/time now)
+  (tasks[INBOX]||[]).forEach((t, i) => {
+    if (t.scheduledAt && t.wife && !t.done && !t.pushed) {
+      const block = (WEEKDAY_BLOCKS.concat(WEEKEND_BLOCKS)).find(b=>b.id===t.scheduledAt.blockId);
+      items.push({
+        source: "inbox",
+        iso: t.scheduledAt.iso, blockId: t.scheduledAt.blockId, idx: i,
+        title: t.title, notes: t.notes, category: t.category,
+        label: block?block.label:"",
+        blockTime: block?block.time:"",
+        taskTime: t.time || ""
+      });
+    }
+  });
+  items.sort((a,b) => a.iso.localeCompare(b.iso));
+  return items;
+}
+function renderSyncList() {
+  const items = collectSyncList();
+  document.getElementById("syncCount").textContent = items.length;
+  const body = document.getElementById("syncList");
+  body.innerHTML = "";
+  // Swap the hint & the Push button based on whether we're behind the Flask backend
+  document.getElementById("syncHintStandalone").style.display = BACKEND_MODE ? "none" : "";
+  document.getElementById("syncHintServer").style.display     = BACKEND_MODE ? "" : "none";
+  document.getElementById("pushAllBtn").hidden = !BACKEND_MODE || items.length === 0;
+  if (!items.length) {
+    body.innerHTML = `<div style="color:var(--muted);font-size:13px;">No items yet. Tick <em>Needs partner</em> on a task to add it here.</div>`;
+    return;
+  }
+  items.forEach(it => {
+    const d = new Date(it.iso);
+    const timeStr = it.taskTime || it.blockTime;
+    const div = document.createElement("div");
+    div.className = "sync-item";
+    div.innerHTML = `<div><strong>${escapeHtml(it.title)}</strong></div>
+      <div class="when">${d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} · ${escapeHtml(it.label)} ${escapeHtml(timeStr)}</div>
+      ${it.notes?`<div style="color:#6b7280;margin-top:4px">${escapeHtml(it.notes)}</div>`:""}`;
+    body.appendChild(div);
+  });
+}
+document.getElementById("openSync").onclick = () => document.getElementById("sidebar").classList.add("open");
+document.getElementById("closeSync").onclick = () => document.getElementById("sidebar").classList.remove("open");
+document.getElementById("copyListBtn").onclick = async () => {
+  const items = collectSyncList();
+  const text = items.map(it => {
+    const d = new Date(it.iso);
+    const timeStr = it.taskTime || it.blockTime;
+    return `• ${d.toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"})} ${timeStr} — ${it.title}${it.notes?` (${it.notes})`:""}`;
+  }).join("\n");
+  try { await navigator.clipboard.writeText(text || "No items"); alert("Copied " + items.length + " item(s) to clipboard."); }
+  catch(e) { alert("Copy failed: " + e.message); }
+};
+
+// Push all wife-flagged items to the Family calendar via the Flask /api/push endpoint.
+document.getElementById("pushAllBtn").onclick = async () => {
+  const items = collectSyncList();
+  if (!items.length) return;
+  if (!confirm(`Push ${items.length} item(s) to the Family calendar?`)) return;
+  const log = document.getElementById("pushLog");
+  log.innerHTML = "Pushing…";
+  let ok = 0, fail = 0;
+  const lines = [];
+  for (const it of items) {
+    try {
+      const body = {
+        title: it.title,
+        notes: it.notes || "",
+        date: it.iso,
+        time: it.taskTime || it.blockTime,
+      };
+      const r = await fetch("/api/push", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) { throw new Error(await r.text()); }
+      // Mark the source task as pushed so it drops out of the list.
+      markPushed(it);
+      ok++;
+      lines.push(`✓ ${it.title}`);
+    } catch (e) {
+      fail++;
+      lines.push(`✗ ${it.title} — ${String(e).slice(0, 120)}`);
+    }
+    log.innerHTML = lines.map(l => `<div>${escapeHtml(l)}</div>`).join("");
+  }
+  lines.push(`<strong>${ok} pushed, ${fail} failed.</strong>`);
+  log.innerHTML = lines.map(l => l.startsWith("<strong>") ? l : `<div>${escapeHtml(l)}</div>`).join("");
+  render(); // re-render grid + sync list; pushed items are now filtered out
+};
+
+function markPushed(it) {
+  if (it.source === "inbox") {
+    const t = (tasks[INBOX] || [])[it.idx];
+    if (t) t.pushed = true;
+  } else {
+    const k = key(it.iso, it.blockId);
+    const t = (tasks[k] || [])[it.idx];
+    if (t) t.pushed = true;
+  }
+}
+
+// ------------- Persistence -------------
+// Standalone (file://): no auto-persist; use Export/Import.
+// Server mode (Flask Pi kit): auto-save to /api/state (debounced).
+let BACKEND_MODE = false;
+let _saveTimer = null;
+function persist() {
+  if (!BACKEND_MODE) return;
+  if (_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(doServerSave, 800);
+}
+function doServerSave() {
+  fetch("/api/state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ version: VERSION, tasks, templates })
+  }).catch(err => console.warn("Auto-save failed:", err));
+}
+async function tryConnectBackend() {
+  try {
+    const r = await fetch("/api/state", { cache: "no-store" });
+    if (!r.ok) return;
+    BACKEND_MODE = true;
+    // Show a small badge so we know we're online with the server
+    const stamp = document.getElementById("versionStamp");
+    if (stamp) stamp.textContent += " · server mode";
+    const payload = await r.json();
+    if (payload && typeof payload.tasks === "object") tasks = payload.tasks || {};
+    if (Array.isArray(payload.templates) && payload.templates.length) templates = payload.templates;
+    // Show what's new if the saved state is from an older version
+    const prev = payload && payload.version != null ? String(payload.version) : null;
+    if (prev && verCmp(prev, VERSION) < 0) showWhatsNew(prev);
+    render();
+    // Also fetch live calendar events and splice into CAL_EVENTS
+    const cr = await fetch("/api/calendar", { cache: "no-store" });
+    if (cr.ok) {
+      const events = await cr.json();
+      if (Array.isArray(events)) {
+        CAL_EVENTS.length = 0;
+        for (const e of events) CAL_EVENTS.push(e);
+        render();
+      }
+    }
+  } catch (e) {
+    // No backend — standalone file. Use Export/Import.
+  }
+}
+// persist() is now called at the end of render() directly (see the render function above).
+
+// Parse a semver-ish version string into a comparable tuple.
+function parseVer(v) {
+  if (!v) return [0,0,0];
+  // Accept "1.0.0", "1.0", "2", and older integer versions like 2
+  const s = String(v);
+  return s.split(".").map(x => parseInt(x, 10) || 0).concat([0,0,0]).slice(0,3);
+}
+function verCmp(a, b) { // -1 / 0 / 1
+  const pa = parseVer(a), pb = parseVer(b);
+  for (let i = 0; i < 3; i++) { if (pa[i] < pb[i]) return -1; if (pa[i] > pb[i]) return 1; }
+  return 0;
+}
+
+document.getElementById("exportBtn").onclick = () => {
+  const payload = { version: VERSION, savedAt: new Date().toISOString(), tasks, templates };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "timetable-" + new Date().toISOString().slice(0,10) + ".json";
+  a.click(); URL.revokeObjectURL(url);
+};
+document.getElementById("importBtn").onclick = () => document.getElementById("importFile").click();
+document.getElementById("importFile").onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const p = JSON.parse(r.result);
+      // Forward-compatible: accept any version, default-fill missing shapes.
+      tasks = (p && typeof p.tasks === "object" && p.tasks) ? p.tasks : {};
+      if (Array.isArray(p.templates) && p.templates.length) templates = p.templates;
+      // Show "What's new" if the file was saved with an older version than the current build.
+      const importedVersion = p.version != null ? String(p.version) : null;
+      if (importedVersion && verCmp(importedVersion, VERSION) < 0) {
+        showWhatsNew(importedVersion);
+      }
+      render();
+    }
+    catch(err) { alert("Couldn't import that JSON: " + err.message); }
+  };
+  r.readAsText(f);
+};
+
+// ------------- Version stamp + What's New -------------
+function renderVersionStamp() {
+  const d = new Date(UPDATED);
+  const pretty = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  document.getElementById("versionStamp").textContent = `v${VERSION} · Updated ${pretty}`;
+}
+function showWhatsNew(previousVersion) {
+  // Collect all changelog entries newer than previousVersion
+  const fresh = CHANGELOG.filter(e => verCmp(e.version, previousVersion) > 0);
+  if (!fresh.length) return;
+  document.getElementById("whatsNewTitle").textContent = "What's new";
+  document.getElementById("whatsNewCtx").textContent =
+    `Your saved state came from v${previousVersion}. You're now on v${VERSION}.`;
+  const body = document.getElementById("whatsNewBody");
+  body.innerHTML = fresh.map(e => {
+    const d = new Date(e.date);
+    const pretty = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+    const items = e.notes.map(n => `<li>${escapeHtml(n)}</li>`).join("");
+    return `<h4 style="margin:12px 0 4px; font-size:13px">v${e.version} · ${pretty}</h4><ul style="margin:0 0 8px 18px">${items}</ul>`;
+  }).join("");
+  document.getElementById("whatsNewModal").classList.add("open");
+}
+document.getElementById("whatsNewOkBtn").onclick = () =>
+  document.getElementById("whatsNewModal").classList.remove("open");
+document.getElementById("whatsNewModal").addEventListener("click", (e) => {
+  if (e.target.id === "whatsNewModal") document.getElementById("whatsNewModal").classList.remove("open");
+});
+document.getElementById("resetBtn").onclick = () => {
+  if (confirm("Clear all tasks from the timetable?")) { tasks = {}; render(); }
+};
+
+// ------------- Init -------------
+renderVersionStamp();
+// Jump to the week containing today (week 0 since today = 20 Apr).
+render();
+// If we're deployed behind a Flask backend (Pi Zero kit), hook into it.
+tryConnectBackend();
+</script>
+</body>
+</html>
